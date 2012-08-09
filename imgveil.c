@@ -11,21 +11,22 @@
 #include <stdarg.h>
 #include <unistd.h>
 #include "imgveil.h"
+#include "file_list.h"
 
 #define IVVersion	"1.0.0"
 #define IVBuildVer	__DATE__
 
-struct iv_ctx 
+typedef struct iv_ctx 
 {
-	int			src_img_count;
-	char 		**src_imgs_path;
+	char		*targe_type;
+	file_list_t *files_list;
 	iv_conv_t	*worker;
-};
+} iv_ctx_t;
 
 static void log_usage()
 {
 	printf("imgveil: illegal option...\n");
-	printf("usage: imgveil -t [cocoa|cocoatouch...] [file ...]\n");
+	printf("usage: imgveil -t [cocoa|cocoatouch...] [file(s) ...]\n");
 }
 
 static void vlog(const char *format, ...)
@@ -51,10 +52,28 @@ static iv_conv_t *search_worker(char *type)
 	return NULL;
 }
 
+static const char *search_type(const char *type)
+{
+	int i=0;
+	int len = sizeof(converter_map) / sizeof(struct iv_conv_map);
+
+	for(i=0; i<len; i++)
+	{   
+		if(strcmp(converter_map[i].name, type) == 0)
+		{   
+			return converter_map[i].name;
+		}   
+	}
+
+	return NULL;
+}
+
 int main(int argc, char *argv[])
 {
-	int opt = 0;
-	const char *optString = "vo:i:";
+	int i=0, opt = 0;
+	const char *opt_str = "vt:";
+	
+	iv_ctx_t *iv_ctx = (iv_ctx_t*)malloc(sizeof(iv_ctx_t));
 	
 	if(argc == 1) 
 	{
@@ -62,23 +81,26 @@ int main(int argc, char *argv[])
 		exit(-1);
 	}
 
-	while((opt = getopt(argc, argv, optString)) != -1)
+	while( -1 != (opt = getopt(argc, argv, opt_str)) )
 	{
 		switch(opt)
 		{
 			case 'v':
 				vlog("imgveil v%s, build on %s\n", IVVersion, IVBuildVer);
+				exit(0);
 				break;
-			case 'o':
-				vlog("outputfile: %s\n", optarg);
+			case 't':
+				iv_ctx->targe_type = (char*)search_type(optarg);
 				break;
-			case 'i':
-				vlog("inputfile: %s\n", optarg);
-				break;
-			default: 
+			default:
 				log_usage();		
 				break;
 		}
+	}
+
+	for(i=optind; i<argc; i++)
+	{
+		printf("files: %s\n", argv[i]);
 	}
 
 	return 0;
