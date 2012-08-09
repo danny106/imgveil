@@ -27,7 +27,17 @@ void dealloc_file_path_list(file_list_t *header)
     {
         file_list_t *next = t->next;
         
-        if(next) free(t);
+        if(t) 
+		{
+			if(t->path) 
+			{
+				free(t->path);
+				t->path = NULL;
+			}
+
+			free(t);
+			t = NULL;
+		}
         
         t = next;
     }while (t);

@@ -86,11 +86,19 @@ int main(int argc, char *argv[])
 		switch(opt)
 		{
 			case 'v':
-				vlog("imgveil v%s, build on %s\n", IVVersion, IVBuildVer);
+				vlog("imgveil: v%s, build on %s\n", IVVersion, IVBuildVer);
 				exit(0);
 				break;
 			case 't':
 				iv_ctx->targe_type = (char*)search_type(optarg);
+				if(iv_ctx->targe_type == NULL)
+				{
+					vlog("imgveil: unknown target....\n");
+				}
+				else
+				{
+					iv_ctx->worker = search_worker(optarg);
+				}
 				break;
 			default:
 				log_usage();		
@@ -100,8 +108,22 @@ int main(int argc, char *argv[])
 
 	for(i=optind; i<argc; i++)
 	{
-		printf("files: %s\n", argv[i]);
-	}
+		char *file_path = argv[i];
+		struct file_path *afile = (struct file_path*)sizeof(struct file_path);
+		
+		afile->path = (char*)malloc(strlen(file_path)+1);
+		sprintf(afile->path, "%s", file_path);
+		afile->next = NULL;
 
+		if(iv_ctx->files_list == NULL)
+		{
+			iv_ctx->files_list = afile;
+		}
+		else
+		{
+			iv_ctx->files_list->next = afile;
+		}
+	}
+	
 	return 0;
 }
