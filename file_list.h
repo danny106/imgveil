@@ -6,6 +6,9 @@
 //
 //
 
+#ifndef FILE_LIST_H_
+#define FILE_LIST_H_
+
 struct file_path
 {
 	char *path;
@@ -18,4 +21,4 @@ file_list_t *init_file_path_list();
 
 void dealloc_file_path_list(file_list_t *header);
 
-
+#endif

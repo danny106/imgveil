@@ -10,18 +10,14 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <unistd.h>
+#include <string.h>
+
 #include "imgveil.h"
 #include "file_list.h"
+#include "imgveil_public.h"
 
 #define IVVersion	"1.0.0"
 #define IVBuildVer	__DATE__
-
-typedef struct iv_ctx 
-{
-	char		*targe_type;
-	file_list_t *files_list;
-	iv_conv_t	*worker;
-} iv_ctx_t;
 
 static void log_usage()
 {
@@ -40,13 +36,14 @@ static void vlog(const char *format, ...)
 static iv_conv_t *search_worker(char *type)
 {
 	int i=0;
-	int len = sizeof(converter_map) / sizeof(struct iv_conv_map);
+	int len = count_conv_map();
 
 	for(i=0; i<len; i++)
 	{
-		if(strcmp(converter_map[i].name, type) == 0)
+		iv_conv_map_t *map = iv_conv_index(i);
+		if(strcmp(map->name, type) == 0)
 		{
-			return converter_map[i].converter;
+			return map->converter;
 		}
 	}
 	return NULL;
@@ -55,16 +52,16 @@ static iv_conv_t *search_worker(char *type)
 static const char *search_type(const char *type)
 {
 	int i=0;
-	int len = sizeof(converter_map) / sizeof(struct iv_conv_map);
+	int len = count_conv_map();
 
 	for(i=0; i<len; i++)
 	{   
-		if(strcmp(converter_map[i].name, type) == 0)
+		iv_conv_map_t *map = iv_conv_index(i);
+		if(strcmp(map->name, type) == 0)
 		{   
-			return converter_map[i].name;
+			return map->name;
 		}   
 	}
-
 	return NULL;
 }
 
@@ -72,9 +69,9 @@ int main(int argc, char *argv[])
 {
 	int i=0, opt = 0;
 	const char *opt_str = "vt:";
-	
-	iv_ctx_t *iv_ctx = (iv_ctx_t*)malloc(sizeof(iv_ctx_t));
-	
+	iv_conv_t *worker = NULL;
+	file_list_t files = NULL;
+
 	if(argc == 1) 
 	{
 		log_usage();
@@ -90,14 +87,14 @@ int main(int argc, char *argv[])
 				exit(0);
 				break;
 			case 't':
-				iv_ctx->targe_type = (char*)search_type(optarg);
-				if(iv_ctx->targe_type == NULL)
+				char *type = (char*)search_type(optarg);
+				if(type == NULL)
 				{
 					vlog("imgveil: unknown target....\n");
 				}
 				else
 				{
-					iv_ctx->worker = search_worker(optarg);
+					worker = search_worker(optarg);
 				}
 				break;
 			default:
@@ -115,15 +112,16 @@ int main(int argc, char *argv[])
 		sprintf(afile->path, "%s", file_path);
 		afile->next = NULL;
 
-		if(iv_ctx->files_list == NULL)
+		if(files == NULL)
 		{
-			iv_ctx->files_list = afile;
+			files = afile;
 		}
 		else
 		{
-			iv_ctx->files_list->next = afile;
+			files->next = afile;
 		}
 	}
+
 	
 	return 0;
 }
