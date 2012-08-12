@@ -31,3 +31,14 @@ char *string_append(const char *src_str, const char *append_str)
     return result;
 }
 
+long length_file(FILE *fp)
+{
+    long posrcd = ftell(fp);
+    
+    fseek(fp,0L,SEEK_END);
+    
+    long len = ftell(fp);
+    fseek(fp, posrcd, SEEK_SET);
+    
+    return len;
+}

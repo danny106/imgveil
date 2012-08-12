@@ -12,5 +12,7 @@
 //the result should be free by caller
 char *string_append(const char *src_str, const char *append_str);
 
+long length_file(FILE *fp);
+
 #endif
 

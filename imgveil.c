@@ -129,6 +129,7 @@ int main(int argc, char *argv[])
 	char *desc = worker->iv_convert(cocoactx, files);
 	worker->iv_uninit(cocoactx);
     vlog("%s", desc);
+    free(desc);
 	
 	return 0;
 }

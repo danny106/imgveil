@@ -13,62 +13,7 @@
 #include "imgveil_cocoa.h"
 #include "utilities.h"
 
-struct iv_cocoa_ctx 
-{
-	int	ID;
-};
-
-typedef struct iv_cocoa_ctx iv_cocoa_ctx_t;
-
-void *imgveil_cocoa_init()
-{
-	iv_cocoa_ctx_t *ctx = (iv_cocoa_ctx_t*)malloc(sizeof(iv_cocoa_ctx_t));
-	ctx->ID = 1;
-	return ctx;
-}
-
-char *imgveil_cocoa_worker(void *context, file_list_t *files)
-{
-    char *result = NULL;
-	iv_cocoa_ctx_t *ctx = (iv_cocoa_ctx_t*)context;
-	file_list_t *afile = files;
-
-	while(afile != NULL)
-	{
-        char *image_desc_cocoa(const char *image_path);
-		char *desc = image_desc_cocoa(afile->path);
-		afile = afile->next;
-                
-        char *temp = string_append(result, desc);
-        if(result) free(result);
-        result = temp;
-        
-        temp = string_append(result, "\n\n");
-        if(result) free(result);
-        result = temp;
-	}
-
-	return result;
-}
-
-void *imgveil_cocoa_uninit(void *context)
-{
-	if(context)
-	{
-		free(context);
-	}
-	return NULL;
-}
-
-iv_conv_t ic_cocoa = {
-	imgveil_cocoa_init,
-	imgveil_cocoa_worker,
-	imgveil_cocoa_uninit
-};
-
-//////////////////////////////////////// private ///////////////////////////////////////////////
-
-#define kInt64ReadBlock (1024*1024/64)
+#define kReadByteBlock  2048
 #define kTab            "\t"
 #define kInt64BeginDesc kTab"const int64_t *imageData = (int64_t[]) \n\t{\n"
 #define kInt64EndDesc   "\n"kTab"};\n\n"
@@ -77,6 +22,13 @@ iv_conv_t ic_cocoa = {
                         kTab"NSData *data = [NSData dataWithBytes:(const void*)imageData length:byteLen];\n"\
                         kTab"NSImage *image = [[[NSImage alloc]initWithData:data]autorelease];\n\n"\
                         kTab"return image;\n";
+
+struct iv_cocoa_ctx
+{
+	int	ID;
+};
+
+typedef struct iv_cocoa_ctx iv_cocoa_ctx_t;
 
 static char *gen_func_name(const char *image_path)
 {
@@ -124,29 +76,34 @@ static char *image_int64_descpt(const char *image_path)
     assert(fp);
     
     char *result = NULL;
-    int64_t buf[kInt64ReadBlock];
-    
+    int8_t buf[kReadByteBlock];
+    long filelen = length_file(fp);
+       
     result = string_append(NULL, kInt64BeginDesc);
     
-    while (feof(fp) == 0 )
-    {
-        int64_t *pBuf = buf;
-        int i = 0;
-        unsigned char addtab = 0;
+    char len_buf[128];  sprintf(len_buf, kTab""kTab"0x%016llx, ", (int64_t)filelen);
+    char *temp = string_append(result, len_buf);
+    
+    free(result); result = temp;
+    
+    
+    while ( ! feof(fp) )
+    {        
+        int8_t addtab = 0;
+        int32_t i = 0;
+                
+        memset(buf, 0, kReadByteBlock);
+        size_t read_count = fread(buf, 1, kReadByteBlock, fp);
+        size_t int64_count = (read_count%64) ? (read_count/64 + 1) :  read_count/64;
         
-        memset(pBuf, 0, kInt64ReadBlock);
+        int64_t *pBuf = (int64_t*)buf;
         
-        int readBytes = fread(buf, sizeof(int64_t), kInt64ReadBlock, fp);
-        int int64count = (readBytes%64) ? (readBytes/64 + 1) : (readBytes/64);
-        
-        for(i=0; i<int64count; i++)
+        for(i=0; i<int64_count; i++)
         {
             char bitDesc[128];
-            
-            if(i+1 != int64count)
-            {
-                if(i==0) addtab = 1;
-                
+                        
+            if(i+1 < read_count)
+            {                
                 if((i+1)%3 == 0)
                 {
                     sprintf(bitDesc, "0x%016llx,\n", *(pBuf+i));
@@ -195,10 +152,58 @@ static char *image_desc_cocoa(const char *image_path)
     char *int64desc = image_int64_descpt(image_path);       
     char *lastpart = kInt64CocoaDesc;
     
-    char *func = (char*)malloc(strlen(content_func_name) + strlen(int64desc) + strlen(lastpart) + 1);
-    sprintf(func, "%s\n{%s%s}\n", content_func_name, int64desc, lastpart);
+    char *func = (char*)malloc(strlen(content_func_name) + strlen(int64desc) + strlen(lastpart) + 10);
+    sprintf(func, "%s\n{\n%s%s}\n", content_func_name, int64desc, lastpart);
     
     free(int64desc);
+    free(content_func_name);
     
     return func;
 }
+
+
+static void *imgveil_cocoa_init()
+{
+	iv_cocoa_ctx_t *ctx = (iv_cocoa_ctx_t*)malloc(sizeof(iv_cocoa_ctx_t));
+	ctx->ID = 1;
+	return ctx;
+}
+
+static char *imgveil_cocoa_worker(void *context, file_list_t *files)
+{
+    char *result = NULL;
+	iv_cocoa_ctx_t *ctx = (iv_cocoa_ctx_t*)context;
+	file_list_t *afile = files;
+    
+	while(afile != NULL)
+	{
+        char *image_desc_cocoa(const char *image_path);
+		char *desc = image_desc_cocoa(afile->path);
+		afile = afile->next;
+        
+        char *temp = string_append(result, desc);
+        if(result) free(result);
+        result = temp;
+        
+        temp = string_append(result, "\n\n");
+        if(result) free(result);
+        result = temp;
+	}
+    
+	return result;
+}
+
+static void *imgveil_cocoa_uninit(void *context)
+{
+	if(context)
+	{
+		free(context);
+	}
+	return NULL;
+}
+
+iv_conv_t ic_cocoa = {
+	imgveil_cocoa_init,
+	imgveil_cocoa_worker,
+	imgveil_cocoa_uninit
+};
