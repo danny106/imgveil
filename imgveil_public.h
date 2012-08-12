@@ -18,7 +18,7 @@ extern "C" {
 struct iv_conv
 {
 	void*  (*iv_init)    (void);
-	char*  (*iv_convert) (file_list_t *);
+	char*  (*iv_convert) (void *, file_list_t *);
 	void*  (*iv_uninit)  (void*);
 };
 

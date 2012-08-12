@@ -69,8 +69,10 @@ int main(int argc, char *argv[])
 {
 	int i=0, opt = 0;
 	const char *opt_str = "vt:";
+	
 	iv_conv_t *worker = NULL;
-	file_list_t files = NULL;
+
+	file_list_t *files = NULL, *lastfile = NULL;
 
 	if(argc == 1) 
 	{
@@ -87,8 +89,7 @@ int main(int argc, char *argv[])
 				exit(0);
 				break;
 			case 't':
-				char *type = (char*)search_type(optarg);
-				if(type == NULL)
+				if(search_type(optarg) == NULL)
 				{
 					vlog("imgveil: unknown target....\n");
 				}
@@ -102,14 +103,14 @@ int main(int argc, char *argv[])
 				break;
 		}
 	}
-
+	
 	for(i=optind; i<argc; i++)
 	{
-		char *file_path = argv[i];
-		struct file_path *afile = (struct file_path*)sizeof(struct file_path);
+		char *path = argv[i];
+		struct file_path *afile = (struct file_path*)malloc(sizeof(struct file_path));
 		
-		afile->path = (char*)malloc(strlen(file_path)+1);
-		sprintf(afile->path, "%s", file_path);
+		afile->path = (char*)malloc(strlen(path)+1);
+		sprintf(afile->path, "%s", path);
 		afile->next = NULL;
 
 		if(files == NULL)
@@ -118,10 +119,16 @@ int main(int argc, char *argv[])
 		}
 		else
 		{
-			files->next = afile;
+			lastfile->next = afile;
 		}
-	}
 
+		lastfile = afile;
+	}
+	
+	void *cocoactx = worker->iv_init();
+	char *desc = worker->iv_convert(cocoactx, files);
+	worker->iv_uninit(cocoactx);
+    vlog("%s", desc);
 	
 	return 0;
 }
