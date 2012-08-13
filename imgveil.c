@@ -19,9 +19,12 @@
 #define IVVersion	"1.0.0"
 #define IVBuildVer	__DATE__
 
-static void log_usage()
+static void log_usage(int ill)
 {
-	printf("imgveil: illegal option...\n");
+	if(ill)
+	{
+		printf("imgveil: illegal option...\n");
+	}
 	printf("usage: imgveil -t [cocoa|cocoatouch...] [file(s) ...]\n");
 }
 
@@ -68,7 +71,7 @@ static const char *search_type(const char *type)
 int main(int argc, char *argv[])
 {
 	int i=0, opt = 0;
-	const char *opt_str = "vt:";
+	const char *opt_str = "vht:";
 	
 	iv_conv_t *worker = NULL;
 
@@ -76,7 +79,7 @@ int main(int argc, char *argv[])
 
 	if(argc == 1) 
 	{
-		log_usage();
+		log_usage(1);
 		exit(-1);
 	}
 
@@ -86,6 +89,10 @@ int main(int argc, char *argv[])
 		{
 			case 'v':
 				vlog("imgveil: v%s, build on %s\n", IVVersion, IVBuildVer);
+				exit(0);
+				break;
+			case 'h':
+				log_usage(0);
 				exit(0);
 				break;
 			case 't':
@@ -99,7 +106,7 @@ int main(int argc, char *argv[])
 				}
 				break;
 			default:
-				log_usage();		
+				log_usage(1);		
 				break;
 		}
 	}
@@ -130,6 +137,7 @@ int main(int argc, char *argv[])
 	worker->iv_uninit(cocoactx);
     vlog("%s", desc);
     free(desc);
+	destroy_file_path_list(files);
 	
 	return 0;
 }

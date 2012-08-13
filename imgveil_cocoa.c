@@ -77,6 +77,7 @@ static char *image_int64_descpt(const char *image_path)
     
     char *result = NULL;
     int8_t buf[kReadByteBlock];
+	int32_t  bytes_handled = 0;
     long filelen = length_file(fp);
        
     result = string_append(NULL, kInt64BeginDesc);
@@ -102,7 +103,7 @@ static char *image_int64_descpt(const char *image_path)
         {
             char bitDesc[128];
                         
-            if(i+1 < read_count)
+            if(bytes_handled + 64 < filelen)
             {                
                 if((i+1)%3 == 0)
                 {
@@ -124,6 +125,8 @@ static char *image_int64_descpt(const char *image_path)
             char *tmp = string_append(result, bitDesc);
             free(result);
             result = tmp;
+
+			bytes_handled += 64;
         }
     }
     

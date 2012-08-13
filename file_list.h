@@ -19,6 +19,6 @@ typedef struct file_path file_list_t;
 
 file_list_t *init_file_path_list();
 
-void dealloc_file_path_list(file_list_t *header);
+void destroy_file_path_list(file_list_t *header);
 
 #endif

@@ -20,7 +20,7 @@ file_list_t *init_file_path_list()
     return NULL;
 }
 
-void dealloc_file_path_list(file_list_t *header)
+void destroy_file_path_list(file_list_t *header)
 {
     file_list_t *t = header;
     do
