@@ -9,10 +9,12 @@
 #include <stdlib.h>
 #include "imgveil_public.h"
 #include "imgveil_cocoa.h"
+#include "imgveil_cocoatouch.h"
 
 iv_conv_map_t converter_map[] = 
 {
-	{"cocoa", &ic_cocoa},
+	"cocoa", 		&ic_cocoa,
+	"cocoatouch",	&ic_cocoatouch,
 };
 
 int count_conv_map()

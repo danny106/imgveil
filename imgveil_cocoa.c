@@ -77,7 +77,12 @@ static char *image_int64_descpt(const char *image_path)
     
     char *result = NULL;
     int8_t buf[kReadByteBlock];
-	int32_t  bytes_handled = 0;
+
+	//contro iavr
+	int32_t bytes_read = 0;
+    int32_t times_write = 1; //count from 1(data length)
+    int8_t new_line = 0;
+
     long filelen = length_file(fp);
        
     result = string_append(NULL, kInt64BeginDesc);
@@ -87,46 +92,49 @@ static char *image_int64_descpt(const char *image_path)
     
     free(result); result = temp;
     
-    
     while ( ! feof(fp) )
     {        
-        int8_t addtab = 0;
         int32_t i = 0;
-                
-        memset(buf, 0, kReadByteBlock);
-        size_t read_count = fread(buf, 1, kReadByteBlock, fp);
-        size_t int64_count = (read_count%64) ? (read_count/64 + 1) :  read_count/64;
         
-        int64_t *pBuf = (int64_t*)buf;
+		size_t read_count = 0;
+        size_t int64_count = 0;
+        int64_t *pbuf = NULL;
         
-        for(i=0; i<int64_count; i++)
+		memset(buf, 0, kReadByteBlock);
+		
+		read_count = fread(buf, 1, kReadByteBlock, fp);
+		int64_count = (read_count%8) ? (read_count/8 + 1) : (read_count/8);
+		pbuf = (int64_t*)buf;
+        
+		for(i=0; i<int64_count; i++)
         {
             char bitDesc[128];
                         
-            if(bytes_handled + 64 < filelen)
+            if(bytes_read + 8 < filelen)
             {                
-                if((i+1)%3 == 0)
+                if((++times_write % 3) == 0)
                 {
-                    sprintf(bitDesc, "0x%016llx,\n", *(pBuf+i));
-                    addtab = 1;
+                    sprintf(bitDesc, "0x%016llx,\n", *(pbuf+i));
+                    new_line = 1;
                 }
                 else
                 {
-                    sprintf(bitDesc, "%s%s0x%016llx, ", addtab ? kTab : "", addtab ? kTab : "",  *(pBuf+i));
-                    addtab = 0;
+                    sprintf(bitDesc, "%s0x%016llx, ", new_line ? kTab""kTab : "",  *(pbuf+i));
+
+					if(new_line) new_line = 0;
                 }
             }
             else
             {
-                sprintf(bitDesc, "%s%s0x%016llx", addtab ? kTab : "", addtab ? kTab : "", *(pBuf+i));
-                addtab = 0;
+                sprintf(bitDesc, "%s0x%016llx", new_line ? kTab""kTab : "", *(pbuf+i));
+				if(new_line) new_line = 0;
             }
             
             char *tmp = string_append(result, bitDesc);
             free(result);
             result = tmp;
 
-			bytes_handled += 64;
+			bytes_read += 8;
         }
     }
     
