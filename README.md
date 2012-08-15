@@ -6,9 +6,9 @@ a command line tool that convert the tiny images to a number of source code, suc
 Usage
 -----
 
-1. Print output to console:  ./imgveil -t cocoatouch /path/to/image.png
-2. Save output to file: /imgveil -t cocoatouch /path/to/image.png > sourcefile.c
-3. Multiple input files support: ./imgveil -t cocoatouch /path/to/image1.png /path/to/image2.png
+1. Print output to console (`./imgveil -t cocoatouch /path/to/image.png`)
+2. Save output to file (`./imgveil -t cocoatouch /path/to/image.png > sourcefile.c`)
+3. Multiple input files support (`./imgveil -t cocoatouch /path/to/image1.png /path/to/image2.png`)
 
 Contributing
 ------------
